@@ -1,9 +1,9 @@
 {
   "serverchan": {
-    "sendkey": "YOUR_SENDKEY"
+    "sendkey": "SCT362913T8fZYNUgHMPmbh2yPAqnuXGph"
   },
   "ai": {
-    "api_key": "YOUR_API_KEY",
+    "api_key": "sk-cnfx2avr70sb44o1ke95y17s9kedl8fijb7p51dd4yl4wv0x",
     "api_endpoint": "https://api.xiaomimimo.com/v1/chat/completions",
     "model": "mimo-v2-flash"
   },
@@ -14,12 +14,13 @@
   },
   "news": {
     "keywords": [
-      "经济政策",
       "电力行业",
-      "新能源",
-      "电力市场",
-      "能源改革"
+      "经济政策",
+      "AI技术"
     ],
-    "max_articles": 5
+    "secondary_keywords": [
+      "经济"
+    ],
+    "max_articles": 8
   }
 }

@@ -11,29 +11,119 @@ import time
 import re
 
 
-# RSS源配置（使用更稳定的源）
+# 内容关键词过滤：文章标题或摘要必须包含至少一个才算匹配
+CONTENT_KEYWORDS = {
+    "经济政策": [
+        "经济", "政策", "财政", "货币", "利率", "GDP", "通胀", "改革",
+        "央行", "国务院", "发改委", "税", "金融", "贸易", "关税",
+        "就业", "消费", "投资", "产业", "发展", "规划", "调控"
+    ],
+    "经济": [
+        "经济", "市场", "股市", "基金", "投资", "企业", "公司", "行业",
+        "增长", "下滑", "数据", "报告", "分析", "趋势", "前景", "风险",
+        "上市", "融资", "并购", "IPO", "营收", "利润", "估值", "市值",
+        "宏观", "微观", "供需", "价格", "成本", "效率", "创新", "转型"
+    ],
+    "电力行业": [
+        "电力", "电网", "发电", "输电", "配电", "新能源", "风电", "光伏",
+        "太阳能", "储能", "核电", "水电", "火电", "能源", "碳", "绿电",
+        "特高压", "变压器", "充电桩", "氢能", "天然气", "石油", "煤炭",
+        "电缆", "工程建设", "项目", "输变电", "配电网", "电力工程"
+    ],
+    "AI技术": [
+        "AI", "人工智能", "机器学习", "深度学习", "大模型", "GPT", "LLM",
+        "芯片", "算力", "智能", "机器人", "自动化", "算法", "数据",
+        "AIGC", "生成式", "Transformer", "神经网络", "ChatGPT", "Claude"
+    ]
+}
+
+
+def matches_content_keywords(text, category):
+    """
+    检查文本是否包含该类别的内容关键词
+
+    Args:
+        text: 要检查的文本（标题+摘要）
+        category: 新闻类别
+
+    Returns:
+        bool: 是否匹配
+    """
+    keywords = CONTENT_KEYWORDS.get(category, [])
+    text_lower = text.lower()
+    return any(kw.lower() in text_lower for kw in keywords)
+
+
+# RSS源配置（已验证可用的直接源）
 RSS_FEEDS = {
     "经济政策": [
         {
-            "name": "财新网",
-            "url": "https://rsshub.app/caixin/latest",
+            "name": "新浪财经",
+            "url": "https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&k=&num=10&page=1",
             "encoding": "utf-8"
         },
         {
-            "name": "第一财经",
-            "url": "https://rsshub.app/yicai/brief",
+            "name": "华尔街见闻",
+            "url": "https://wallstreetcn.com/rss",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "中新网财经",
+            "url": "https://www.chinanews.com.cn/rss/finance.xml",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "人民日报",
+            "url": "http://www.people.com.cn/rss/politics.xml",
+            "encoding": "utf-8"
+        }
+    ],
+    "经济": [
+        {
+            "name": "FT中文网",
+            "url": "https://www.ftchinese.com/rss/news",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "钛媒体",
+            "url": "https://www.tmtpost.com/rss",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "爱范儿",
+            "url": "https://www.ifanr.com/feed",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "中新网财经",
+            "url": "https://www.chinanews.com.cn/rss/finance.xml",
             "encoding": "utf-8"
         }
     ],
     "电力行业": [
         {
-            "name": "能源新闻",
-            "url": "https://rsshub.app/zaobao/realtime/china",
+            "name": "北极星电力",
+            "url": "https://news.bjx.com.cn/rss.xml",
             "encoding": "utf-8"
         },
         {
-            "name": "中国能源报",
-            "url": "https://rsshub.app/people/env",
+            "name": "北极星太阳能",
+            "url": "https://guangfu.bjx.com.cn/rss.xml",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "北极星储能",
+            "url": "https://chuneng.bjx.com.cn/rss.xml",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "中国能源网",
+            "url": "http://www.cnenergy.org/rss/",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "能源界",
+            "url": "https://www.energytrend.cn/rss.xml",
             "encoding": "utf-8"
         }
     ],
@@ -45,12 +135,17 @@ RSS_FEEDS = {
         },
         {
             "name": "机器之心",
-            "url": "https://rsshub.app/jiqizhixin",
+            "url": "https://www.jiqizhixin.com/rss",
             "encoding": "utf-8"
         },
         {
             "name": "量子位",
-            "url": "https://rsshub.app/qbitai",
+            "url": "https://www.qbitai.com/feed",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "雷锋网",
+            "url": "https://www.leiphone.com/feed",
             "encoding": "utf-8"
         }
     ]
@@ -77,7 +172,7 @@ def clean_html(html_text):
         return text[:500]
 
 
-def fetch_rss_feed(feed_info, category, max_items=3, only_today=True):
+def fetch_rss_feed(feed_info, category, max_items=3, max_age_days=1):
     """
     从单个RSS源获取新闻
 
@@ -85,7 +180,7 @@ def fetch_rss_feed(feed_info, category, max_items=3, only_today=True):
         feed_info: RSS源信息字典
         category: 新闻类别
         max_items: 最大获取条数
-        only_today: 是否只获取今天的新闻
+        max_age_days: 最大天数（0=仅今天，1=今天+昨天，2=近3天）
 
     Returns:
         新闻列表
@@ -130,12 +225,11 @@ def fetch_rss_feed(feed_info, category, max_items=3, only_today=True):
                     published_date = datetime(*entry.updated_parsed[:6]).date()
                     published = published_date.strftime("%Y-%m-%d")
 
-                # 日期过滤：只保留今天的新闻（如果only_today=True）
-                if only_today and published_date:
-                    if published_date < today:
-                        # 跳过昨天及更早的新闻
+                # 日期过滤：保留 max_age_days 天内的新闻
+                if published_date:
+                    if published_date < today - timedelta(days=max_age_days):
                         continue
-                elif only_today and not published_date:
+                else:
                     # 没有日期的新闻，跳过
                     continue
 
@@ -157,6 +251,11 @@ def fetch_rss_feed(feed_info, category, max_items=3, only_today=True):
                         if content.get('value'):
                             summary = clean_html(content.value)
                             break
+
+                # 内容关键词过滤：检查标题和摘要是否包含相关关键词
+                combined_text = title + " " + summary
+                if not matches_content_keywords(combined_text, category):
+                    continue
 
                 # 构建新闻对象
                 news_item = {
@@ -189,14 +288,14 @@ def fetch_rss_feed(feed_info, category, max_items=3, only_today=True):
     return news_list
 
 
-def fetch_news_by_keywords(keywords, max_per_keyword=3, only_today=True):
+def fetch_news_by_keywords(keywords, max_per_keyword=3, max_age_days=1):
     """
     根据关键词从对应RSS源获取新闻
 
     Args:
         keywords: 关键词列表
         max_per_keyword: 每个关键词最大新闻数
-        only_today: 是否只获取今天的新闻
+        max_age_days: 最大天数（0=仅今天，1=今天+昨天，2=近3天）
 
     Returns:
         新闻列表
@@ -215,7 +314,7 @@ def fetch_news_by_keywords(keywords, max_per_keyword=3, only_today=True):
             continue
 
         for feed_info in feeds:
-            news_list = fetch_rss_feed(feed_info, keyword, max_per_keyword, only_today)
+            news_list = fetch_rss_feed(feed_info, keyword, max_per_keyword, max_age_days)
 
             # 去重
             for news in news_list:
@@ -282,31 +381,34 @@ def get_sample_news_fallback(keywords, max_articles=8):
     return filtered_news[:max_articles]
 
 
-def main(keywords, max_articles=8):
+def main(keywords, max_articles=8, secondary_keywords=None):
     """
-    主函数：获取新闻
+    主函数：获取新闻（优先主要关键词，不够再补充次要关键词）
 
     Args:
-        keywords: 关键词列表
+        keywords: 主要关键词列表（优先级高）
         max_articles: 最大新闻数
+        secondary_keywords: 次要关键词列表（补充用）
 
     Returns:
         新闻列表
     """
     print("=" * 50)
     print("开始获取今日新闻")
-    print(f"关键词: {keywords}")
+    print(f"主要关键词: {keywords}")
+    if secondary_keywords:
+        print(f"补充关键词: {secondary_keywords}")
     print(f"日期: {datetime.now().strftime('%Y-%m-%d')}")
     print("=" * 50)
 
-    # 从RSS源获取今天的新闻
-    news_list = fetch_news_by_keywords(keywords, max_per_keyword=3, only_today=True)
+    # 第一步：从主要关键词获取新闻
+    news_list = fetch_news_by_keywords(keywords, max_per_keyword=3, max_age_days=1)
 
-    # 如果RSS获取的新闻不足，使用备用数据（带今天日期）
-    if len(news_list) < 3:
-        print("\n⚠️ 今日RSS新闻不足，使用备用数据补充...")
-        fallback_news = get_sample_news_fallback(keywords, max_articles)
-        news_list.extend(fallback_news)
+    # 第二步：如果主要关键词新闻不足，且有补充关键词，再获取补充新闻
+    if len(news_list) < max_articles and secondary_keywords:
+        print(f"\n⚠️ 主要关键词新闻不足({len(news_list)}条)，获取补充新闻...")
+        secondary_news = fetch_news_by_keywords(secondary_keywords, max_per_keyword=3, max_age_days=1)
+        news_list.extend(secondary_news)
 
     # 去重
     seen_titles = set()
@@ -328,8 +430,8 @@ def main(keywords, max_articles=8):
 
 if __name__ == "__main__":
     # 测试
-    test_keywords = ["经济政策", "电力行业", "AI技术"]
-    news = main(test_keywords, max_articles=5)
+    test_keywords = ["经济政策", "经济", "电力行业", "AI技术"]
+    news = main(test_keywords, max_articles=8)
 
     print("\n获取到的新闻:")
     for i, article in enumerate(news, 1):

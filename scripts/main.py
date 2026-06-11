@@ -34,7 +34,8 @@ def load_config():
             "model": os.getenv("AI_MODEL", "MiMo")
         },
         "news": {
-            "keywords": ["经济政策", "电力行业", "AI技术"],
+            "keywords": ["电力行业", "经济政策", "AI技术"],
+            "secondary_keywords": ["经济"],
             "max_articles": 8
         }
     }
@@ -138,7 +139,8 @@ def main():
     try:
         news_list = fetch_news(
             keywords=config["news"]["keywords"],
-            max_articles=config["news"]["max_articles"]
+            max_articles=config["news"]["max_articles"],
+            secondary_keywords=config["news"].get("secondary_keywords", [])
         )
         if not news_list:
             print("❌ 未获取到新闻")

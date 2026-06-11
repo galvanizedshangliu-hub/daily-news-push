@@ -6,21 +6,24 @@ AI摘要生成模块
 import json
 import requests
 from openai import OpenAI
+from datetime import datetime
 
 
-def generate_summary(news_list, api_key, api_endpoint, model="MiMo"):
+def generate_summary(news_list, config):
     """
     调用AI API生成个性化新闻摘要
 
     Args:
         news_list: 新闻列表
-        api_key: API密钥
-        api_endpoint: API端点
-        model: 模型名称
+        config: 配置字典
 
     Returns:
         格式化的摘要文本
     """
+    api_key = config["ai"]["api_key"]
+    api_endpoint = config["ai"]["api_endpoint"]
+    model = config["ai"].get("model", "MiMo")
+
     try:
         # 构建新闻内容
         news_content = ""
@@ -29,22 +32,27 @@ def generate_summary(news_list, api_key, api_endpoint, model="MiMo"):
             news_content += f"   来源：{news.get('source', '未知')}\n"
             news_content += f"   摘要：{news['summary']}\n"
 
+        # 获取今天的日期
+        today = datetime.now().strftime("%Y年%m月%d日")
+        weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][datetime.now().weekday()]
+
         # 构建提示词
-        prompt = f"""你是一个资深的财经和科技新闻分析师。请根据以下新闻，生成一份详细、专业的每日简报。
+        prompt = f"""你是一个资深的财经和科技新闻分析师。今天是{today} {weekday}。请根据以下新闻，生成一份详细、专业的每日简报。
 
 要求：
 1. 使用中文，语言专业但易读
-2. **新闻要详细展开**：不要精简，保留关键数据、数字、百分比、时间点
-3. **数据驱动**：引用新闻中的具体数据，如增长百分比、规模数据、时间目标等
-4. **深度分析**：每条新闻后添加"影响分析"，说明对行业/市场的影响
-5. **关联性分析**：分析经济政策、电力行业、AI技术之间的关联和相互影响
-6. **趋势总结**：在最后添加一个"趋势与展望"板块，总结：
+2. **日期必须准确**：简报日期必须写成 {today} {weekday}，不要写其他日期
+3. **新闻要详细展开**：不要精简，保留关键数据、数字、百分比、时间点
+4. **数据驱动**：引用新闻中的具体数据，如增长百分比、规模数据、时间目标等
+5. **深度分析**：每条新闻后添加"影响分析"，说明对行业/市场的影响
+6. **关联性分析**：分析经济政策、电力行业、AI技术之间的关联和相互影响
+7. **趋势总结**：在最后添加一个"趋势与展望"板块，总结：
    - 今日新闻反映的整体趋势
    - 对未来1-3个月的预判
    - 值得关注的投资方向或机会
    - 潜在的风险点
-7. 适当添加emoji让内容更易读
-8. 结构清晰，使用标题和要点列表
+8. 适当添加emoji让内容更易读
+9. 结构清晰，使用标题和要点列表
 
 今日新闻：
 {news_content}
@@ -125,13 +133,7 @@ def main(news_list, config):
     主函数：生成AI摘要
     """
     print("正在生成AI摘要...")
-
-    api_key = config["ai"]["api_key"]
-    api_endpoint = config["ai"]["api_endpoint"]
-    model = config["ai"].get("model", "MiMo")
-
-    summary = generate_summary(news_list, api_key, api_endpoint, model)
-
+    summary = generate_summary(news_list, config)
     print("AI摘要生成完成")
     return summary
 
