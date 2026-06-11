@@ -5,7 +5,7 @@
   "ai": {
     "api_key": "YOUR_API_KEY",
     "api_endpoint": "https://api.xiaomimimo.com/v1/chat/completions",
-    "model": "MiMo"
+    "model": "mimo-v2-flash"
   },
   "schedule": {
     "timezone": "Asia/Shanghai",

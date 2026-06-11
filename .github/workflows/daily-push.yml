@@ -20,7 +20,7 @@ env:
   SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
   AI_API_KEY: ${{ secrets.AI_API_KEY }}
   AI_API_ENDPOINT: 'https://api.xiaomimimo.com/v1/chat/completions'
-  AI_MODEL: 'MiMo'
+  AI_MODEL: 'mimo-v2-flash'
 
 # 任务
 jobs:
