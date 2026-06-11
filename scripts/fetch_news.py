@@ -72,7 +72,7 @@ def clean_html(html_text):
         return text[:500]
 
 
-def fetch_rss_feed(feed_info, category, max_items=3):
+def fetch_rss_feed(feed_info, category, max_items=3, only_today=True):
     """
     从单个RSS源获取新闻
 
@@ -80,6 +80,7 @@ def fetch_rss_feed(feed_info, category, max_items=3):
         feed_info: RSS源信息字典
         category: 新闻类别
         max_items: 最大获取条数
+        only_today: 是否只获取今天的新闻
 
     Returns:
         新闻列表
@@ -110,15 +111,28 @@ def fetch_rss_feed(feed_info, category, max_items=3):
 
         # 获取今天的日期（用于过滤）
         today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
 
-        for entry in feed.entries[:max_items * 2]:  # 多获取一些，用于过滤
+        for entry in feed.entries[:max_items * 5]:  # 多获取一些，用于过滤
             try:
                 # 解析发布时间
                 published = None
+                published_date = None
                 if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    published = datetime(*entry.published_parsed[:6]).date()
+                    published_date = datetime(*entry.published_parsed[:6]).date()
+                    published = published_date.strftime("%Y-%m-%d")
                 elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-                    published = datetime(*entry.updated_parsed[:6]).date()
+                    published_date = datetime(*entry.updated_parsed[:6]).date()
+                    published = published_date.strftime("%Y-%m-%d")
+
+                # 日期过滤：只保留今天的新闻（如果only_today=True）
+                if only_today and published_date:
+                    if published_date < today:
+                        # 跳过昨天及更早的新闻
+                        continue
+                elif only_today and not published_date:
+                    # 没有日期的新闻，跳过
+                    continue
 
                 # 获取标题
                 title = entry.get('title', '').strip()
@@ -146,7 +160,7 @@ def fetch_rss_feed(feed_info, category, max_items=3):
                     "source": feed_info['name'],
                     "url": entry.get('link', ''),
                     "keyword": category,
-                    "published": published.strftime("%Y-%m-%d") if published else "未知"
+                    "published": published if published else datetime.now().strftime("%Y-%m-%d")
                 }
 
                 news_list.append(news_item)
@@ -158,7 +172,7 @@ def fetch_rss_feed(feed_info, category, max_items=3):
                 print(f"    解析条目失败: {e}")
                 continue
 
-        print(f"    ✓ 获取到 {len(news_list)} 条")
+        print(f"    ✓ 获取到 {len(news_list)} 条今日新闻")
 
     except requests.exceptions.Timeout:
         print(f"    ✗ {feed_info['name']} 超时")
@@ -170,13 +184,14 @@ def fetch_rss_feed(feed_info, category, max_items=3):
     return news_list
 
 
-def fetch_news_by_keywords(keywords, max_per_keyword=3):
+def fetch_news_by_keywords(keywords, max_per_keyword=3, only_today=True):
     """
     根据关键词从对应RSS源获取新闻
 
     Args:
         keywords: 关键词列表
         max_per_keyword: 每个关键词最大新闻数
+        only_today: 是否只获取今天的新闻
 
     Returns:
         新闻列表
@@ -195,7 +210,7 @@ def fetch_news_by_keywords(keywords, max_per_keyword=3):
             continue
 
         for feed_info in feeds:
-            news_list = fetch_rss_feed(feed_info, keyword, max_per_keyword)
+            news_list = fetch_rss_feed(feed_info, keyword, max_per_keyword, only_today)
 
             # 去重
             for news in news_list:
@@ -274,16 +289,17 @@ def main(keywords, max_articles=8):
         新闻列表
     """
     print("=" * 50)
-    print("开始获取新闻")
+    print("开始获取今日新闻")
     print(f"关键词: {keywords}")
+    print(f"日期: {datetime.now().strftime('%Y-%m-%d')}")
     print("=" * 50)
 
-    # 从RSS源获取新闻
-    news_list = fetch_news_by_keywords(keywords, max_per_keyword=3)
+    # 从RSS源获取今天的新闻
+    news_list = fetch_news_by_keywords(keywords, max_per_keyword=3, only_today=True)
 
-    # 如果RSS获取的新闻不足，使用备用数据补充
+    # 如果RSS获取的新闻不足，使用备用数据（带今天日期）
     if len(news_list) < 3:
-        print("\n⚠️ RSS获取新闻不足，使用备用数据补充...")
+        print("\n⚠️ 今日RSS新闻不足，使用备用数据补充...")
         fallback_news = get_sample_news_fallback(keywords, max_articles)
         news_list.extend(fallback_news)
 
@@ -299,7 +315,7 @@ def main(keywords, max_articles=8):
     result = unique_news[:max_articles]
 
     print("\n" + "=" * 50)
-    print(f"最终获取到 {len(result)} 条新闻")
+    print(f"最终获取到 {len(result)} 条今日新闻")
     print("=" * 50)
 
     return result
