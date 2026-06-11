@@ -1,8 +1,6 @@
 {
-  "wechat": {
-    "corpid": "YOUR_CORPID",
-    "corpsecret": "YOUR_CORPSECRET",
-    "agentid": "YOUR_AGENTID"
+  "serverchan": {
+    "sendkey": "YOUR_SENDKEY"
   },
   "ai": {
     "api_key": "YOUR_API_KEY",

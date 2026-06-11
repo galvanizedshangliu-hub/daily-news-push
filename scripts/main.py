@@ -1,6 +1,6 @@
 """
 每日新闻推送主程序
-整合新闻获取、AI摘要生成、企业微信推送
+整合新闻获取、AI摘要生成、Server酱推送
 """
 
 import json
@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fetch_news import main as fetch_news
 from generate_summary import main as generate_summary
-from send_wechat import send_to_wechat
+from send_serverchan import send_to_serverchan
 
 
 def load_config():
@@ -25,10 +25,8 @@ def load_config():
     2. config.json文件
     """
     config = {
-        "wechat": {
-            "corpid": os.getenv("WECHAT_CORPID", ""),
-            "corpsecret": os.getenv("WECHAT_CORPSECRET", ""),
-            "agentid": os.getenv("WECHAT_AGENTID", "")
+        "serverchan": {
+            "sendkey": os.getenv("SERVERCHAN_SENDKEY", "")
         },
         "ai": {
             "api_key": os.getenv("AI_API_KEY", ""),
@@ -42,7 +40,7 @@ def load_config():
     }
 
     # 如果环境变量为空，尝试从config.json读取
-    if not config["wechat"]["corpid"]:
+    if not config["serverchan"]["sendkey"]:
         try:
             config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -67,13 +65,9 @@ def validate_config(config):
     Returns:
         (bool, str) - (是否有效, 错误信息)
     """
-    # 检查企业微信配置
-    if not config["wechat"]["corpid"]:
-        return False, "缺少企业微信corpid"
-    if not config["wechat"]["corpsecret"]:
-        return False, "缺少企业微信corpsecret"
-    if not config["wechat"]["agentid"]:
-        return False, "缺少企业微信agentid"
+    # 检查Server酱配置
+    if not config["serverchan"]["sendkey"]:
+        return False, "缺少Server酱SendKey"
 
     # 检查AI配置
     if not config["ai"]["api_key"]:
@@ -84,36 +78,36 @@ def validate_config(config):
 
 def format_message(news_list, ai_summary):
     """
-    格式化最终推送的消息
+    格式化最终推送的消息（Markdown格式）
 
     Args:
         news_list: 新闻列表
         ai_summary: AI生成的摘要
 
     Returns:
-        格式化后的消息文本
+        格式化后的Markdown文本
     """
     today = datetime.now().strftime("%Y年%m月%d日")
     weekday = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"][datetime.now().weekday()]
 
-    message = f"🌅 早安！今日财经简报\n"
-    message += f"📅 {today} {weekday}\n"
-    message += "=" * 30 + "\n\n"
+    message = f"# 🌅 早安！今日财经简报\n\n"
+    message += f"📅 **{today} {weekday}**\n\n"
+    message += "---\n\n"
 
     # 添加AI摘要
     message += ai_summary + "\n\n"
 
-    message += "=" * 30 + "\n"
-    message += "📌 新闻来源：\n"
+    message += "---\n\n"
+    message += "## 📌 新闻来源\n\n"
 
     # 添加新闻来源
     for i, news in enumerate(news_list, 1):
         source = news.get("source", "未知")
         title = news["title"][:20] + "..." if len(news["title"]) > 20 else news["title"]
-        message += f"{i}. {title} - {source}\n"
+        message += f"{i}. {title} - *{source}*\n"
 
-    message += "\n"
-    message += "💡 祝您今日工作顺利！"
+    message += "\n---\n\n"
+    message += "💡 *祝您今日工作顺利！*"
 
     return message
 
@@ -166,19 +160,20 @@ def main():
 
     # 5. 格式化消息
     print("\n正在格式化消息...")
-    message = format_message(news_list, ai_summary)
+    title = f"📰 每日财经简报 {datetime.now().strftime('%m/%d')}"
+    content = format_message(news_list, ai_summary)
 
-    # 6. 发送到企业微信
-    print("\n正在发送到企业微信...")
-    result = send_to_wechat(message, config, msg_type="text")
+    # 6. 通过Server酱发送到微信
+    print("\n正在通过Server酱发送到微信...")
+    result = send_to_serverchan(title, content, config["serverchan"]["sendkey"])
 
-    if result.get("errcode") == 0:
+    if result.get("code") == 0:
         print("\n" + "=" * 50)
         print("✅ 消息推送成功！")
         print("=" * 50)
         print("\n消息预览：")
         print("-" * 30)
-        print(message[:500] + "..." if len(message) > 500 else message)
+        print(content[:500] + "..." if len(content) > 500 else content)
         print("-" * 30)
     else:
         print(f"\n❌ 消息推送失败: {result}")

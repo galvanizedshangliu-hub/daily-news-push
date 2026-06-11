@@ -17,9 +17,7 @@ on:
 
 # 环境变量
 env:
-  WECHAT_CORPID: ${{ secrets.WECHAT_CORPID }}
-  WECHAT_CORPSECRET: ${{ secrets.WECHAT_CORPSECRET }}
-  WECHAT_AGENTID: ${{ secrets.WECHAT_AGENTID }}
+  SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
   AI_API_KEY: ${{ secrets.AI_API_KEY }}
   AI_API_ENDPOINT: 'https://api.xiaomimimo.com/v1/chat/completions'
   AI_MODEL: 'MiMo'
@@ -52,9 +50,7 @@ jobs:
       - name: 运行每日新闻推送
         run: python scripts/main.py
         env:
-          WECHAT_CORPID: ${{ secrets.WECHAT_CORPID }}
-          WECHAT_CORPSECRET: ${{ secrets.WECHAT_CORPSECRET }}
-          WECHAT_AGENTID: ${{ secrets.WECHAT_AGENTID }}
+          SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
 
       # 5. 记录运行结果
