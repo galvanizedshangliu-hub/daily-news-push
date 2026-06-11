@@ -1,0 +1,27 @@
+{
+  "wechat": {
+    "corpid": "YOUR_CORPID",
+    "corpsecret": "YOUR_CORPSECRET",
+    "agentid": "YOUR_AGENTID"
+  },
+  "ai": {
+    "api_key": "YOUR_API_KEY",
+    "api_endpoint": "https://api.xiaomimimo.com/v1/chat/completions",
+    "model": "MiMo"
+  },
+  "schedule": {
+    "timezone": "Asia/Shanghai",
+    "hour": 8,
+    "minute": 0
+  },
+  "news": {
+    "keywords": [
+      "经济政策",
+      "电力行业",
+      "新能源",
+      "电力市场",
+      "能源改革"
+    ],
+    "max_articles": 5
+  }
+}

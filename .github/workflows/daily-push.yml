@@ -1,0 +1,68 @@
+name: 每日新闻推送
+
+# 触发条件
+on:
+  # 定时触发：每天早上7:30 UTC（北京时间8:00，UTC+8）
+  schedule:
+    - cron: '30 23 * * *'  # UTC时间23:30 = 北京时间7:30
+
+  # 手动触发（用于测试）
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: '测试模式'
+        required: false
+        default: 'false'
+        type: boolean
+
+# 环境变量
+env:
+  WECHAT_CORPID: ${{ secrets.WECHAT_CORPID }}
+  WECHAT_CORPSECRET: ${{ secrets.WECHAT_CORPSECRET }}
+  WECHAT_AGENTID: ${{ secrets.WECHAT_AGENTID }}
+  AI_API_KEY: ${{ secrets.AI_API_KEY }}
+  AI_API_ENDPOINT: 'https://api.xiaomimimo.com/v1/chat/completions'
+  AI_MODEL: 'MiMo'
+
+# 任务
+jobs:
+  daily-news-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # 1. 检出代码
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # 2. 设置Python环境
+      - name: 设置Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # 3. 安装依赖
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. 运行主程序
+      - name: 运行每日新闻推送
+        run: python scripts/main.py
+        env:
+          WECHAT_CORPID: ${{ secrets.WECHAT_CORPID }}
+          WECHAT_CORPSECRET: ${{ secrets.WECHAT_CORPSECRET }}
+          WECHAT_AGENTID: ${{ secrets.WECHAT_AGENTID }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+
+      # 5. 记录运行结果
+      - name: 记录运行结果
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "每日新闻推送任务完成"
+          echo "运行时间: $(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')"
+          echo "状态: ${{ job.status }}"
+          echo "=========================================="
