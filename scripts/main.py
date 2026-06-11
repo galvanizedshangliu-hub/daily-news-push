@@ -34,7 +34,7 @@ def load_config():
             "model": os.getenv("AI_MODEL", "MiMo")
         },
         "news": {
-            "keywords": ["经济政策", "电力行业", "新能源", "电力市场", "能源改革", "人工智能", "AI应用", "AI技术", "大模型", "机器学习"],
+            "keywords": ["经济政策", "电力行业", "AI技术"],
             "max_articles": 8
         }
     }

@@ -11,41 +11,46 @@ import time
 import re
 
 
-# RSS源配置
+# RSS源配置（使用更稳定的源）
 RSS_FEEDS = {
     "经济政策": [
         {
-            "name": "中国政府网",
-            "url": "http://www.gov.cn/rss/govall.xml",
+            "name": "财新网",
+            "url": "https://rsshub.app/caixin/latest",
             "encoding": "utf-8"
         },
         {
-            "name": "新华网",
-            "url": "http://www.xinhuanet.com/politics/xhll.xml",
+            "name": "第一财经",
+            "url": "https://rsshub.app/yicai/brief",
             "encoding": "utf-8"
         }
     ],
     "电力行业": [
         {
-            "name": "北极星电力网",
-            "url": "https://news.bjx.com.cn/rss.xml",
+            "name": "能源新闻",
+            "url": "https://rsshub.app/zaobao/realtime/china",
             "encoding": "utf-8"
         },
         {
-            "name": "中国电力新闻网",
-            "url": "http://www.cpnn.com.cn/rss/gd.xml",
+            "name": "中国能源报",
+            "url": "https://rsshub.app/people/env",
             "encoding": "utf-8"
         }
     ],
     "AI技术": [
         {
-            "name": "36氪AI频道",
+            "name": "36氪",
             "url": "https://36kr.com/feed",
             "encoding": "utf-8"
         },
         {
             "name": "机器之心",
-            "url": "https://www.jiqizhixin.com/rss",
+            "url": "https://rsshub.app/jiqizhixin",
+            "encoding": "utf-8"
+        },
+        {
+            "name": "量子位",
+            "url": "https://rsshub.app/qbitai",
             "encoding": "utf-8"
         }
     ]
